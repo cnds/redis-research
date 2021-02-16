@@ -44,6 +44,7 @@ list *listCreate(void)
 
     if ((list = zmalloc(sizeof(*list))) == NULL)
         return NULL;
+    // 头尾节点都指向NULL，是一个双端无环的链表
     list->head = list->tail = NULL;
     list->len = 0;
     list->dup = NULL;

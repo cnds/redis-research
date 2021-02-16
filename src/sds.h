@@ -38,10 +38,11 @@
 
 typedef char *sds;
 
+// 基本字符串对象结构，所有字符串都基于该结构
 struct sdshdr {
-    unsigned int len;
-    unsigned int free;
-    char buf[];
+    unsigned int len; // 长度
+    unsigned int free;  // 剩余空间
+    char buf[];  // 实际存储的字符串
 };
 
 static inline size_t sdslen(const sds s) {

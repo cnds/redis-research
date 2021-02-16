@@ -131,14 +131,19 @@ sds sdsMakeRoomFor(sds s, size_t addlen) {
     size_t free = sdsavail(s);
     size_t len, newlen;
 
+    // 如果字符串空间还够，不额外申请空间
     if (free >= addlen) return s;
     len = sdslen(s);
     sh = (void*) (s-(sizeof(struct sdshdr)));
     newlen = (len+addlen);
+
+    // 这里申请了2倍的空间, 其中预留了free的空间和len一样大
+    // 如果新的字符串超过SDS_MAX_PREALLOC, 则只是增加SDS_MAX_PREALLOC
     if (newlen < SDS_MAX_PREALLOC)
         newlen *= 2;
     else
         newlen += SDS_MAX_PREALLOC;
+    newlen = (len+addlen)*2;
     newsh = zrealloc(sh, sizeof(struct sdshdr)+newlen+1);
     if (newsh == NULL) return NULL;
 
@@ -246,6 +251,9 @@ sds sdscatlen(sds s, const void *t, size_t len) {
     memcpy(s+curlen, t, len);
     sh->len = curlen+len;
     sh->free = sh->free-len;
+
+    // 这里保证了所有的字符串结构体最后保存的都是'\0'
+    // 计算字符串大小的时候，这里要多+1个字节
     s[curlen+len] = '\0';
     return s;
 }
@@ -573,6 +581,8 @@ sds sdstrim(sds s, const char *cset) {
     while(ep > start && strchr(cset, *ep)) ep--;
     len = (sp > ep) ? 0 : ((ep-sp)+1);
     if (sh->buf != sp) memmove(sh->buf, sp, len);
+    // 这里将最后的字符串设置成'\0'
+    // 字符串缩短后，空间并没有释放，只是增加了free的值
     sh->buf[len] = '\0';
     sh->free = sh->free+(sh->len-len);
     sh->len = len;
