@@ -44,6 +44,7 @@
 /* Unused arguments generate annoying warnings... */
 #define DICT_NOTUSED(V) ((void) V)
 
+// 哈希表数组的实体，包含了键值对和指向下个哈希表的节点
 typedef struct dictEntry {
     void *key;
     union {
@@ -52,6 +53,8 @@ typedef struct dictEntry {
         int64_t s64;
         double d;
     } v;
+
+    // 这个指向同一个key下的下一个哈希数组，用来解决哈希冲突
     struct dictEntry *next;
 } dictEntry;
 
@@ -66,17 +69,25 @@ typedef struct dictType {
 
 /* This is our hash table structure. Every dictionary has two of this as we
  * implement incremental rehashing, for the old to the new table. */
+
+// 这个是redis的哈希表结构，其中记录了整个哈希表的一些信息，比如大小、已有节点数量
 typedef struct dictht {
+    // 这个是哈希表数组的实体
     dictEntry **table;
     unsigned long size;
     unsigned long sizemask;
     unsigned long used;
 } dictht;
 
+// 这是字典的结构
 typedef struct dict {
+    // 这里是一些操作函数
     dictType *type;
     void *privdata;
+    // 哈希表, 2个元素的数组，第一个是字典平时在用的，第二个在进行rehash时使用
     dictht ht[2];
+
+    // 记录了rehash的进度
     long rehashidx; /* rehashing not in progress if rehashidx == -1 */
     int iterators; /* number of iterators currently running */
 } dict;

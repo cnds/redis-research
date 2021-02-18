@@ -182,6 +182,8 @@ int _dictInit(dict *d, dictType *type,
     _dictReset(&d->ht[1]);
     d->type = type;
     d->privdata = privDataPtr;
+
+    // rehashindex，记录了rehash的步骤，初始值-1表示不需要进行rehash
     d->rehashidx = -1;
     d->iterators = 0;
     return DICT_OK;
@@ -258,6 +260,8 @@ int dictRehash(dict *d, int n) {
         }
         de = d->ht[0].table[d->rehashidx];
         /* Move all the keys in this bucket from the old to the new hash HT */
+
+        // rehash过程，ht[0]的数据转移到ht[1]
         while(de) {
             unsigned int h;
 
@@ -275,6 +279,8 @@ int dictRehash(dict *d, int n) {
     }
 
     /* Check if we already rehashed the whole table... */
+
+    // 这里检查是否已经完全rehash完成
     if (d->ht[0].used == 0) {
         zfree(d->ht[0].table);
         d->ht[0] = d->ht[1];
@@ -349,6 +355,7 @@ dictEntry *dictAddRaw(dict *d, void *key)
     dictEntry *entry;
     dictht *ht;
 
+    // 渐进式rehash的步骤
     if (dictIsRehashing(d)) _dictRehashStep(d);
 
     /* Get the index of the new element, or -1 if
@@ -357,7 +364,10 @@ dictEntry *dictAddRaw(dict *d, void *key)
         return NULL;
 
     /* Allocate the memory and store the new entry */
+    // 如果正在rehash中，新的值进到ht[1]
     ht = dictIsRehashing(d) ? &d->ht[1] : &d->ht[0];
+
+    // 新的值放到了entity的第一个节点
     entry = zmalloc(sizeof(*entry));
     entry->next = ht->table[index];
     ht->table[index] = entry;
@@ -494,10 +504,13 @@ dictEntry *dictFind(dict *d, const void *key)
     if (d->ht[0].size == 0) return NULL; /* We don't have a table at all */
     if (dictIsRehashing(d)) _dictRehashStep(d);
     h = dictHashKey(d, key);
+
+    // 这里在ht[0]和ht[1]里都找一遍
     for (table = 0; table <= 1; table++) {
         idx = h & d->ht[table].sizemask;
         he = d->ht[table].table[idx];
         while(he) {
+            // 查询的时候，查询的是链表
             if (dictCompareKeys(d, key, he->key))
                 return he;
             he = he->next;

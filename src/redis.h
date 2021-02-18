@@ -599,22 +599,31 @@ struct sharedObjectsStruct {
 };
 
 /* ZSETs use a specialized version of Skiplists */
+
+// 有续集和的实现，跳表节点
+// 这里有4个属性，实际的对象，分数，后退指针，前进的结构体
 typedef struct zskiplistNode {
     robj *obj;
     double score;
     struct zskiplistNode *backward;
+    // 前进的结构体里，记录了下一个节点的指针和跨度，跨度主要是用来计算排名，跨度之和就是排名
     struct zskiplistLevel {
         struct zskiplistNode *forward;
         unsigned int span;
     } level[];
 } zskiplistNode;
 
+// 跳表
 typedef struct zskiplist {
+    // 这里记录了跳表的头尾节点
     struct zskiplistNode *header, *tail;
+    // 长度
     unsigned long length;
+    // 跳表层数
     int level;
 } zskiplist;
 
+// 有续集和
 typedef struct zset {
     dict *dict;
     zskiplist *zsl;
